@@ -20,9 +20,7 @@
     }
     
     .remove {
-      position: absolute;
-      right: 10;
-      top: 10;
+      position: relative;
       opacity: 0.5;
     }
     
@@ -54,14 +52,12 @@
     </style>
   </head>
   <body>
-    <a href="https://github.com/jpillora/base64-encoder">
-      <img style="position: absolute; z-index: 2; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_darkblue_121621.png" alt="Fork me on GitHub">
-    </a>
   
     <h2>Base64 File Encoder</h2>
     <h4>Drop Files here</h4>
+    <input type="button" value="Download" onclick="downloadExcelTable()" style="position:fixed;z-index:1001;">
     <div id="dropper"></div> 
-    <div id="results"></div>
+    <table id="results"></table>
     <script>
     if (typeof window.FileReader === 'undefined')
       alert('File API & FileReader not supported');
@@ -87,47 +83,84 @@
     
     function fileLoaded(filename, dataUri) {
     
-      var div = document.createElement("div");
-      div.className = 'item';
+      var tr = document.createElement("tr");
+      tr.className = 'item';
     
       var remove = document.createElement("button");
+      var td1 = document.createElement("td");
       remove.className = 'remove';
       remove.innerHTML = 'x';
       remove.onclick = function() {
         if(localStorage) localStorage.removeItem("b64-"+filename);
-        results.removeChild(div);
+        results.removeChild(tr);
       };
-      div.appendChild(remove);
+
+      td1.appendChild(remove);
+      tr.appendChild(td1);
     
+      var td2 = document.createElement("td");
       var name = document.createElement("div");
       name.innerHTML = filename;
-      div.appendChild(name);
+      td2.appendChild(name);
+      tr.appendChild(td2);
     
-      if(/^data:image/.test(dataUri)) {
-        var imgDiv = document.createElement("div");
-        var img = document.createElement("img");
-        img.src = dataUri;
-        img.style['max-width'] = '100px';
-        img.style['height-width'] = '100px';
-        imgDiv.appendChild(img);
-        div.appendChild(imgDiv);
-      }
+      // if(/^data:image/.test(dataUri)) {
+      // var td3 = document.createElement("td");
+      //   var imgDiv = document.createElement("div");
+      //   var img = document.createElement("img");
+      //   img.src = dataUri;
+      //   img.style['max-width'] = '100px';
+      //   img.style['height-width'] = '100px';
+      //   imgDiv.appendChild(img);
+      //   td3.appendChild(imgDiv);
+      //   tr.appendChild(td3);
+      // }
     
-      var ta = document.createElement("textarea");
-      ta.onclick = function() {
-        ta.select();
-      };
-      ta.value = dataUri;
-      div.appendChild(ta);
+      var td3 = document.createElement("td");
+      var ta = document.createElement("p");
+      ta.innerHTML = dataUri;
+      td3.appendChild(ta);
+      tr.appendChild(td3);
     
-      results.appendChild(div);
+      results.appendChild(tr);
       if(localStorage) localStorage.setItem("b64-"+filename, dataUri);
     }
+    function downloadExcelTable(){
+      alert();
+        var dt = new Date();
+        var day = dt.getDate();
+        var month = dt.getMonth() + 1;
+        var year = dt.getFullYear();
+        var hour = dt.getHours();
+        var mins = dt.getMinutes();
+        var postfix = day + "." + month + "." + year + "_" + hour + "." + mins;
+
+        var uri = 'data:application/vnd.ms-excel;base64,'
+            template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><!--[if gte mso 9]><?xml version="1.0" encoding="UTF-8" standalone="yes"?><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+            base64 = function(s) {
+                return window.btoa(unescape(encodeURIComponent(s)))
+            },
+            format = function(s, c) {
+                return s.replace(/{(\w+)}/g, function(m, p) {
+                return c[p];
+                })
+            }
+            var toExcel = document.getElementById("results").innerHTML;
+            var ctx = {
+            worksheet: name || '',
+            table: toExcel
+            };
+            var link = document.createElement("a");
+            link.download = 'exported_table_' + postfix + '.xls';
+            link.href = uri + base64(format(template, ctx))
+            link.click();
+            link.remove();
+    }
     
-    if(localStorage)
-      for(var filename in localStorage)
-        if(filename.indexOf("b64-") === 0)
-          fileLoaded(filename.replace("b64-",""), localStorage.getItem(filename));
+     if(localStorage)
+       for(var filename in localStorage)
+         if(filename.indexOf("b64-") === 0)
+           fileLoaded(filename.replace("b64-",""), localStorage.getItem(filename));
     </script>
   </body>
 </html>
